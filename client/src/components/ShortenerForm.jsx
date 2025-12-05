@@ -30,6 +30,9 @@ const ShortenerForm = ({ onUrlShortened }) => {
           errorMessage = err.response.data;
         } else if (err.response.data?.message) {
           errorMessage = err.response.data.message;
+          if (err.response.data?.details) {
+            errorMessage += `: ${err.response.data.details}`;
+          }
         } else if (err.response.data?.error) {
           errorMessage = err.response.data.error;
         } else {
