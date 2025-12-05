@@ -22,8 +22,8 @@ const ShortenerForm = ({ onUrlShortened }) => {
       onUrlShortened(res.data);
       setLongUrl('');
     } catch (err) {
-      setError('Failed to shorten URL. Please try again.');
       console.error(err);
+      setError(err.response?.data?.message || err.response?.data || 'Failed to shorten URL. Please try again.');
     } finally {
       setLoading(false);
     }

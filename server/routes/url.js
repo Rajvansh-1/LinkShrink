@@ -8,7 +8,9 @@ const db = require('../db/database');
 // @desc    Create short URL
 router.post('/shorten', async (req, res) => {
   const { longUrl } = req.body;
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+
+  // Dynamic Base URL: Use configured env var, or derive from request (Vercel friendly)
+  const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 
   // Check base url
   if (!validUrl.isUri(baseUrl)) {

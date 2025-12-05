@@ -15,6 +15,12 @@ if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
   console.log('Connected to Turso Database');
 } else {
   // Use Local SQLite
+  if (process.env.NODE_ENV === 'production') {
+    console.error('CRITICAL ERROR: Running in production without TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
+    console.error('Local SQLite is not supported in serverless environments (Vercel).');
+    throw new Error('Database configuration missing for production.');
+  }
+
   const Database = require('better-sqlite3');
   const dbPath = path.resolve(__dirname, 'url_shortener.db');
   db = new Database(dbPath);
