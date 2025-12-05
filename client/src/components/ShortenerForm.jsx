@@ -15,7 +15,8 @@ const ShortenerForm = ({ onUrlShortened }) => {
     setError('');
 
     try {
-      const res = await axios.post('http://localhost:5000/api/url/shorten', { longUrl });
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await axios.post(`${apiUrl}/api/url/shorten`, { longUrl });
       onUrlShortened(res.data);
       setLongUrl('');
     } catch (err) {

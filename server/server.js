@@ -15,9 +15,9 @@ app.use(express.json());
 app.use('/api/url', urlRoutes);
 
 // Redirect route
-app.get('/:code', (req, res) => {
+app.get('/:code', async (req, res) => {
   try {
-    const url = db.getUrl(req.params.code);
+    const url = await db.getUrl(req.params.code);
     if (url) {
       // Increment clicks (async, don't wait)
       db.incrementClicks(req.params.code);
@@ -30,6 +30,10 @@ app.get('/:code', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

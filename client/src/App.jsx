@@ -12,7 +12,8 @@ function App() {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/url/history');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await axios.get(`${apiUrl}/api/url/history`);
       setHistory(res.data);
     } catch (err) {
       console.error('Failed to fetch history', err);
