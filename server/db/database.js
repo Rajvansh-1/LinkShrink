@@ -1,4 +1,3 @@
-const Database = require('better-sqlite3');
 const { createClient } = require('@libsql/client');
 const path = require('path');
 require('dotenv').config();
@@ -16,6 +15,7 @@ if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
   console.log('Connected to Turso Database');
 } else {
   // Use Local SQLite
+  const Database = require('better-sqlite3');
   const dbPath = path.resolve(__dirname, 'url_shortener.db');
   db = new Database(dbPath);
   console.log('Connected to Local SQLite Database');
