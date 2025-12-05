@@ -103,9 +103,17 @@ const getAllUrls = async () => {
 
 // Initialize Turso Table if needed (Async)
 if (isLibsql) {
-  (async () => {
-    try {
-      await db.execute(`
+  // Initialize Turso Table if needed (Async)
+  // Note: In serverless (Vercel), this might fail if multiple requests try to create the table at once.
+  // It's better to create the table manually in the Turso dashboard, but we'll try here for convenience.
+  if (isLibsql) {
+    (async () => {
+      try {
+        // Simple check query to see if connection works
+        await db.execute('SELECT 1');
+
+        // Only attempt to create table if we can connect
+        await db.execute(`
                 CREATE TABLE IF NOT EXISTS urls (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     urlCode TEXT UNIQUE,
@@ -114,10 +122,11 @@ if (isLibsql) {
                     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `);
-    } catch (err) {
-      console.error("Error initializing Turso DB:", err);
-    }
-  })();
+      } catch (err) {
+        console.error("Warning: Could not initialize Turso DB table. Ensure it exists manually if this persists.", err);
+      }
+    })();
+  }
 }
 
 module.exports = {
