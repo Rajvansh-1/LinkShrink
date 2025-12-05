@@ -5,11 +5,11 @@ require('dotenv').config();
 let db;
 let isLibsql = false;
 
-if (process.env.libsql://linkshrink-rajvansh-1.aws-ap-south-1.turso.io && process.env.eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NjQ5NTk5MzgsImlkIjoiYjBiOGVmOWEtMTI4NS00ZTIyLTk3Y2MtYjg5NWE0ZTljYWRkIiwicmlkIjoiNjM1OGUwMDgtMWI5NS00ZjY0LWIxMjUtZjQ4YTFhZGY5MjY3In0.y1RJfWjBD2m1MQqYCgieHnl80aDrg7BpmZQbBe7tejd0RoNAM9mdt554E-bcr2MZsGhL1_etocIO1KJRQyCLAw) {
+if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
   // Use Turso (Cloud)
   db = createClient({
-    url: process.env.libsql://linkshrink-rajvansh-1.aws-ap-south-1.turso.io,
-    authToken: process.env.eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NjQ5NTk5MzgsImlkIjoiYjBiOGVmOWEtMTI4NS00ZTIyLTk3Y2MtYjg5NWE0ZTljYWRkIiwicmlkIjoiNjM1OGUwMDgtMWI5NS00ZjY0LWIxMjUtZjQ4YTFhZGY5MjY3In0.y1RJfWjBD2m1MQqYCgieHnl80aDrg7BpmZQbBe7tejd0RoNAM9mdt554E-bcr2MZsGhL1_etocIO1KJRQyCLAw,
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
   });
   isLibsql = true;
   console.log('Connected to Turso Database');
