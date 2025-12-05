@@ -23,7 +23,22 @@ const ShortenerForm = ({ onUrlShortened }) => {
       setLongUrl('');
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || err.response?.data || 'Failed to shorten URL. Please try again.');
+      let errorMessage = 'Failed to shorten URL. Please try again.';
+
+      if (err.response) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data?.error) {
+          errorMessage = err.response.data.error;
+        } else {
+          // Fallback for unknown object structure
+          errorMessage = JSON.stringify(err.response.data);
+        }
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
