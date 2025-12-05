@@ -17,7 +17,7 @@ const Footer = () => {
         Design & Developed by <span style={{ color: '#f8fafc', fontWeight: 600 }}>Rajvansh</span>
       </div>
       <a
-        href="https://github.com/rajvansh"
+        href="https://github.com/Rajvansh-1"
         target="_blank"
         rel="noopener noreferrer"
         style={{
