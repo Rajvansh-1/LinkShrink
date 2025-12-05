@@ -12,7 +12,9 @@ function App() {
 
   const fetchHistory = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
+      // In production (Vercel), we use relative path to proxy correctly
+      // In dev, we use localhost:5000
+      const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
       const res = await axios.get(`${apiUrl}/api/url/history`);
       setHistory(res.data);
     } catch (err) {
