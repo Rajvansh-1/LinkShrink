@@ -14,7 +14,17 @@ const Footer = () => {
       gap: '0.5rem'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-        Design & Developed by <span style={{ color: '#f8fafc', fontWeight: 600 }}>Rajvansh</span>
+        Design & Developed by
+        <a
+          href="https://github.com/Rajvansh-1"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#f8fafc', fontWeight: 600, textDecoration: 'none', transition: 'color 0.2s' }}
+          onMouseOver={(e) => e.currentTarget.style.color = '#818cf8'}
+          onMouseOut={(e) => e.currentTarget.style.color = '#f8fafc'}
+        >
+          Rajvansh
+        </a>
       </div>
       <a
         href="https://github.com/Rajvansh-1"
