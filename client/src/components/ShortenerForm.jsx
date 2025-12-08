@@ -18,7 +18,10 @@ const ShortenerForm = ({ onUrlShortened }) => {
       // In production (Vercel), we use relative path to proxy correctly
       // In dev, we use localhost:5000
       const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
-      const res = await axios.post(`${apiUrl}/api/url/shorten`, { longUrl });
+      const userId = localStorage.getItem('userId');
+      const res = await axios.post(`${apiUrl}/api/url/shorten`, { longUrl }, {
+        headers: { 'x-user-id': userId }
+      });
       onUrlShortened(res.data);
       setLongUrl('');
     } catch (err) {

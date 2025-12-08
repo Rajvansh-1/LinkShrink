@@ -33,9 +33,17 @@ if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
       urlCode TEXT UNIQUE,
       originalUrl TEXT,
       clicks INTEGER DEFAULT 0,
+      userId TEXT,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Migration: Add userId column if it doesn't exist (for existing local DBs)
+  try {
+    db.exec('ALTER TABLE urls ADD COLUMN userId TEXT');
+  } catch (err) {
+    // Ignore error if column already exists
+  }
 }
 
 // Helper to run queries on either DB
@@ -67,15 +75,15 @@ const getUrl = async (code) => {
   }
 };
 
-const createUrl = async (urlCode, originalUrl) => {
+const createUrl = async (urlCode, originalUrl, userId = null) => {
   if (isLibsql) {
     await db.execute({
-      sql: 'INSERT INTO urls (urlCode, originalUrl) VALUES (?, ?)',
-      args: [urlCode, originalUrl]
+      sql: 'INSERT INTO urls (urlCode, originalUrl, userId) VALUES (?, ?, ?)',
+      args: [urlCode, originalUrl, userId]
     });
   } else {
-    const stmt = db.prepare('INSERT INTO urls (urlCode, originalUrl) VALUES (?, ?)');
-    stmt.run(urlCode, originalUrl);
+    const stmt = db.prepare('INSERT INTO urls (urlCode, originalUrl, userId) VALUES (?, ?, ?)');
+    stmt.run(urlCode, originalUrl, userId);
   }
 };
 
@@ -91,13 +99,18 @@ const incrementClicks = async (code) => {
   }
 };
 
-const getAllUrls = async () => {
+const getAllUrls = async (userId) => {
+  if (!userId) return []; // Don't show global history anymore
+
   if (isLibsql) {
-    const result = await db.execute('SELECT * FROM urls ORDER BY createdAt DESC LIMIT 50');
+    const result = await db.execute({
+      sql: 'SELECT * FROM urls WHERE userId = ? ORDER BY createdAt DESC LIMIT 50',
+      args: [userId]
+    });
     return result.rows;
   } else {
-    const stmt = db.prepare('SELECT * FROM urls ORDER BY createdAt DESC LIMIT 50');
-    return stmt.all();
+    const stmt = db.prepare('SELECT * FROM urls WHERE userId = ? ORDER BY createdAt DESC LIMIT 50');
+    return stmt.all(userId);
   }
 }
 
@@ -119,9 +132,17 @@ if (isLibsql) {
                     urlCode TEXT UNIQUE,
                     originalUrl TEXT,
                     clicks INTEGER DEFAULT 0,
+                    userId TEXT,
                     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `);
+
+        // Migration for Turso: Add userId column if it doesn't exist
+        try {
+          await db.execute('ALTER TABLE urls ADD COLUMN userId TEXT');
+        } catch (e) {
+          // Ignore if column exists
+        }
       } catch (err) {
         console.error("Warning: Could not initialize Turso DB table. Ensure it exists manually if this persists.", err);
       }

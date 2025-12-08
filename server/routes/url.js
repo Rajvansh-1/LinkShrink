@@ -27,7 +27,10 @@ router.post('/shorten', async (req, res) => {
       // For this implementation, we'll just create a new one every time or we could check.
       // Let's just create new to allow multiple short links for same URL (common feature)
 
-      await db.createUrl(urlCode, longUrl);
+      // Let's just create new to allow multiple short links for same URL (common feature)
+
+      const userId = req.headers['x-user-id'];
+      await db.createUrl(urlCode, longUrl, userId);
       const shortUrl = `${baseUrl}/${urlCode}`;
 
       res.json({
@@ -50,7 +53,8 @@ router.post('/shorten', async (req, res) => {
 // @desc    Get recent URLs
 router.get('/history', async (req, res) => {
   try {
-    const urls = await db.getAllUrls();
+    const userId = req.headers['x-user-id'];
+    const urls = await db.getAllUrls(userId);
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
     const formattedUrls = urls.map(url => ({
       ...url,

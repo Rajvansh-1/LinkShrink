@@ -10,21 +10,30 @@ function App() {
   const [currentResult, setCurrentResult] = useState(null);
   const [history, setHistory] = useState([]);
 
+  useEffect(() => {
+    // Generate/Get User ID
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+      userId = crypto.randomUUID();
+      localStorage.setItem('userId', userId);
+    }
+    fetchHistory();
+  }, []);
+
   const fetchHistory = async () => {
     try {
+      const userId = localStorage.getItem('userId');
       // In production (Vercel), we use relative path to proxy correctly
       // In dev, we use localhost:5000
       const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
-      const res = await axios.get(`${apiUrl}/api/url/history`);
+      const res = await axios.get(`${apiUrl}/api/url/history`, {
+        headers: { 'x-user-id': userId }
+      });
       setHistory(res.data);
     } catch (err) {
       console.error('Failed to fetch history', err);
     }
   };
-
-  useEffect(() => {
-    fetchHistory();
-  }, []);
 
   const handleUrlShortened = (result) => {
     setCurrentResult(result);
