@@ -14,6 +14,11 @@ app.use(express.json());
 // Routes
 app.use('/api/url', urlRoutes);
 
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Redirect route
 app.get('/:code', async (req, res) => {
   try {
