@@ -1,13 +1,26 @@
 import { FaHistory, FaExternalLinkAlt } from 'react-icons/fa';
 
-const History = ({ history }) => {
+const History = ({ history, onClearHistory }) => {
   if (!history || history.length === 0) return null;
 
   return (
     <div className="card" style={{ marginTop: '2rem' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 0 }}>
-        <FaHistory style={{ color: '#818cf8' }} /> Recent Links
-      </h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+          <FaHistory style={{ color: '#818cf8' }} /> Recent Links
+        </h3>
+        <button
+          onClick={onClearHistory}
+          style={{
+            background: '#ef4444',
+            fontSize: '0.8rem',
+            padding: '0.3rem 0.8rem',
+            height: 'auto'
+          }}
+        >
+          Clear History
+        </button>
+      </div>
       <ul className="history-list">
         {history.map((item) => (
           <li key={item.urlCode} className="history-item">

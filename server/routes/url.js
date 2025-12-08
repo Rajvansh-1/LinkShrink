@@ -67,4 +67,20 @@ router.get('/history', async (req, res) => {
   }
 });
 
+// @route   DELETE /api/url/history
+// @desc    Clear user history
+router.delete('/history', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID required' });
+    }
+    await db.deleteUserUrls(userId);
+    res.json({ message: 'History cleared' });
+  } catch (err) {
+    console.error('Clear History Error:', err);
+    res.status(500).json({ message: 'Server error', details: err.message });
+  }
+});
+
 module.exports = router;

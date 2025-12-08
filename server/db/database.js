@@ -150,9 +150,24 @@ if (isLibsql) {
   }
 }
 
+const deleteUserUrls = async (userId) => {
+  if (!userId) return;
+
+  if (isLibsql) {
+    await db.execute({
+      sql: 'DELETE FROM urls WHERE userId = ?',
+      args: [userId]
+    });
+  } else {
+    const stmt = db.prepare('DELETE FROM urls WHERE userId = ?');
+    stmt.run(userId);
+  }
+};
+
 module.exports = {
   getUrl,
   createUrl,
   incrementClicks,
-  getAllUrls
+  getAllUrls,
+  deleteUserUrls
 };

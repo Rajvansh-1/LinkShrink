@@ -40,6 +40,22 @@ function App() {
     fetchHistory();
   };
 
+  const handleClearHistory = async () => {
+    if (!confirm('Are you sure you want to clear your history? This cannot be undone.')) return;
+
+    try {
+      const userId = localStorage.getItem('userId');
+      const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
+      await axios.delete(`${apiUrl}/api/url/history`, {
+        headers: { 'x-user-id': userId }
+      });
+      setHistory([]);
+    } catch (err) {
+      console.error('Failed to clear history', err);
+      alert('Failed to clear history');
+    }
+  };
+
   return (
     <div className="container" style={{ minHeight: '100vh', paddingBottom: '0' }}>
       <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
@@ -53,7 +69,7 @@ function App() {
           <UrlResult result={currentResult} />
         </div>
 
-        <History history={history} />
+        <History history={history} onClearHistory={handleClearHistory} />
       </div>
 
       <Footer />
