@@ -17,7 +17,7 @@ const ShortenerForm = ({ onUrlShortened }) => {
     try {
       const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
       const userId = localStorage.getItem('userId');
-      constQN
+
       const res = await axios.post(`${apiUrl}/api/url/shorten`, { longUrl }, {
         headers: { 'x-user-id': userId }
       });
@@ -56,11 +56,11 @@ const ShortenerForm = ({ onUrlShortened }) => {
         </div>
       </form>
       {error && (
-        <div style={{ 
-          marginTop: '1rem', 
-          color: '#ef4444', 
-          background: 'rgba(239, 68, 68, 0.1)', 
-          padding: '0.75rem', 
+        <div style={{
+          marginTop: '1rem',
+          color: '#ef4444',
+          background: 'rgba(239, 68, 68, 0.1)',
+          padding: '0.75rem',
           borderRadius: '12px',
           display: 'flex',
           alignItems: 'center',
