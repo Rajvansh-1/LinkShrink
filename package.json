@@ -2,10 +2,15 @@
   "name": "linkshrink-monorepo",
   "version": "1.0.0",
   "scripts": {
+    "postinstall": "cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\" --names \"SERVER,CLIENT\" --prefix-colors \"magenta,cyan\"",
     "build": "cd client && npm install && npm run build"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20.x"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",

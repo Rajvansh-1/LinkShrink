@@ -5,161 +5,132 @@ require('dotenv').config();
 let db;
 let isLibsql = false;
 
+// ---------------------------------------------------------
+// DATABASE CONNECTION LOGIC
+// ---------------------------------------------------------
+
 if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
-  // Use Turso (Cloud)
-  db = createClient({
-    url: process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://'),
-    authToken: process.env.TURSO_AUTH_TOKEN,
-  });
-  isLibsql = true;
-  console.log('Connected to Turso Database');
+  // CLOUD MODE: Turso (LibSQL)
+  try {
+    db = createClient({
+      url: process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://'),
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+    isLibsql = true;
+    console.log('✅ Connected to Turso Database (Cloud)');
+  } catch (e) {
+    console.error('❌ Failed to connect to Turso:', e.message);
+    throw e;
+  }
 } else {
-  // Use Local SQLite
+  // LOCAL MODE: SQLite
   if (process.env.NODE_ENV === 'production') {
-    console.error('CRITICAL ERROR: Running in production without TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
-    console.error('Local SQLite is not supported in serverless environments (Vercel).');
-    throw new Error('Database configuration missing for production.');
+    // In production (Vercel), we CANNOT use local file system for DB.
+    console.warn('⚠️  WARNING: Running in production without Turso credentials.'); 
+    console.warn('⚠️  Data will not persist in Serverless environment.');
   }
 
-  const Database = require('better-sqlite3');
-  const dbPath = path.resolve(__dirname, 'url_shortener.db');
-  db = new Database(dbPath);
-  console.log('Connected to Local SQLite Database');
-
-  // Initialize Local DB
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS urls (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      urlCode TEXT UNIQUE,
-      originalUrl TEXT,
-      clicks INTEGER DEFAULT 0,
-      userId TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Migration: Add userId column if it doesn't exist (for existing local DBs)
   try {
-    db.exec('ALTER TABLE urls ADD COLUMN userId TEXT');
+    const Database = require('better-sqlite3');
+    const dbPath = path.resolve(__dirname, 'url_shortener.db');
+    db = new Database(dbPath);
+    isLibsql = false;
+    console.log('✅ Connected to Local SQLite Database');
+
+    // Initialize Local DB Synchronously (Safe for local)
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS urls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        urlCode TEXT UNIQUE,
+        originalUrl TEXT,
+        clicks INTEGER DEFAULT 0,
+        userId TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
   } catch (err) {
-    // Ignore error if column already exists
+    console.error('❌ Failed to initialize local SQLite:', err);
   }
 }
 
-// Helper to run queries on either DB
-const runQuery = async (sql, args = []) => {
-  if (isLibsql) {
-    return await db.execute({ sql, args });
-  } else {
-    const stmt = db.prepare(sql);
-    if (sql.trim().toUpperCase().startsWith('SELECT')) {
-      if (sql.includes('LIMIT 1') || sql.includes('WHERE urlCode = ?')) { // Heuristic for single row
-        return stmt.get(...args);
-      }
-      return stmt.all(...args);
-    }
-    return stmt.run(...args);
-  }
+// ---------------------------------------------------------
+// HELPERS
+// ---------------------------------------------------------
+
+// Helper to normalize query results from different drivers
+const normalizeRow = (row) => {
+  if (!row) return null;
+  // Turso returns objects/arrays, better-sqlite3 returns objects. 
+  // We ensure consistent object return.
+  return row;
 };
 
+// ---------------------------------------------------------
+// CORE FUNCTIONS
+// ---------------------------------------------------------
+
 const getUrl = async (code) => {
-  if (isLibsql) {
-    const result = await db.execute({
-      sql: 'SELECT * FROM urls WHERE urlCode = ?',
-      args: [code]
-    });
-    return result.rows[0];
-  } else {
-    const stmt = db.prepare('SELECT * FROM urls WHERE urlCode = ?');
-    return stmt.get(code);
+  try {
+    if (isLibsql) {
+      const result = await db.execute({
+        sql: 'SELECT * FROM urls WHERE urlCode = ?',
+        args: [code]
+      });
+      return result.rows[0];
+    } else {
+      const stmt = db.prepare('SELECT * FROM urls WHERE urlCode = ?');
+      return stmt.get(code);
+    }
+  } catch (err) {
+    console.error('DB getUrl Error:', err);
+    return null;
   }
 };
 
 const createUrl = async (urlCode, originalUrl, userId = null) => {
+  const sql = 'INSERT INTO urls (urlCode, originalUrl, userId) VALUES (?, ?, ?)';
+  
   if (isLibsql) {
-    await db.execute({
-      sql: 'INSERT INTO urls (urlCode, originalUrl, userId) VALUES (?, ?, ?)',
-      args: [urlCode, originalUrl, userId]
-    });
+    await db.execute({ sql, args: [urlCode, originalUrl, userId] });
   } else {
-    const stmt = db.prepare('INSERT INTO urls (urlCode, originalUrl, userId) VALUES (?, ?, ?)');
+    const stmt = db.prepare(sql);
     stmt.run(urlCode, originalUrl, userId);
   }
 };
 
 const incrementClicks = async (code) => {
+  const sql = 'UPDATE urls SET clicks = clicks + 1 WHERE urlCode = ?';
+  
   if (isLibsql) {
-    await db.execute({
-      sql: 'UPDATE urls SET clicks = clicks + 1 WHERE urlCode = ?',
-      args: [code]
-    });
+    await db.execute({ sql, args: [code] });
   } else {
-    const stmt = db.prepare('UPDATE urls SET clicks = clicks + 1 WHERE urlCode = ?');
+    const stmt = db.prepare(sql);
     stmt.run(code);
   }
 };
 
 const getAllUrls = async (userId) => {
-  if (!userId) return []; // Don't show global history anymore
+  if (!userId) return [];
+  
+  const sql = 'SELECT * FROM urls WHERE userId = ? ORDER BY createdAt DESC LIMIT 50';
 
   if (isLibsql) {
-    const result = await db.execute({
-      sql: 'SELECT * FROM urls WHERE userId = ? ORDER BY createdAt DESC LIMIT 50',
-      args: [userId]
-    });
+    const result = await db.execute({ sql, args: [userId] });
     return result.rows;
   } else {
-    const stmt = db.prepare('SELECT * FROM urls WHERE userId = ? ORDER BY createdAt DESC LIMIT 50');
+    const stmt = db.prepare(sql);
     return stmt.all(userId);
   }
-}
-
-// Initialize Turso Table if needed (Async)
-if (isLibsql) {
-  // Initialize Turso Table if needed (Async)
-  // Note: In serverless (Vercel), this might fail if multiple requests try to create the table at once.
-  // It's better to create the table manually in the Turso dashboard, but we'll try here for convenience.
-  if (isLibsql) {
-    (async () => {
-      try {
-        // Simple check query to see if connection works
-        await db.execute('SELECT 1');
-
-        // Only attempt to create table if we can connect
-        await db.execute(`
-                CREATE TABLE IF NOT EXISTS urls (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    urlCode TEXT UNIQUE,
-                    originalUrl TEXT,
-                    clicks INTEGER DEFAULT 0,
-                    userId TEXT,
-                    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `);
-
-        // Migration for Turso: Add userId column if it doesn't exist
-        try {
-          await db.execute('ALTER TABLE urls ADD COLUMN userId TEXT');
-        } catch (e) {
-          // Ignore if column exists
-        }
-      } catch (err) {
-        console.error("Warning: Could not initialize Turso DB table. Ensure it exists manually if this persists.", err);
-      }
-    })();
-  }
-}
+};
 
 const deleteUserUrls = async (userId) => {
   if (!userId) return;
+  const sql = 'DELETE FROM urls WHERE userId = ?';
 
   if (isLibsql) {
-    await db.execute({
-      sql: 'DELETE FROM urls WHERE userId = ?',
-      args: [userId]
-    });
+    await db.execute({ sql, args: [userId] });
   } else {
-    const stmt = db.prepare('DELETE FROM urls WHERE userId = ?');
+    const stmt = db.prepare(sql);
     stmt.run(userId);
   }
 };

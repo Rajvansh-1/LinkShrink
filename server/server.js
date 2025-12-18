@@ -7,8 +7,15 @@ const urlRoutes = require('./routes/url');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust Proxy for Vercel/Heroku (Critical for correct protocol/host detection)
+app.enable('trust proxy');
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*', // For production, restrict this to your frontend domain
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-user-id']
+}));
 app.use(express.json());
 
 // Routes
@@ -16,28 +23,49 @@ app.use('/api/url', urlRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'active', 
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString() 
+  });
 });
 
-// Redirect route
+// The Redirect Engine
 app.get('/:code', async (req, res) => {
   try {
-    const url = await db.getUrl(req.params.code);
+    const code = req.params.code;
+    const url = await db.getUrl(code);
+
     if (url) {
-      // Increment clicks (async, don't wait)
-      db.incrementClicks(req.params.code);
-      return res.redirect(url.originalUrl);
+      // Fire and forget click tracking (Non-blocking)
+      db.incrementClicks(code).catch(err => console.error('Click tracking failed:', err));
+      
+      // 301 Permanent Redirect is better for SEO/Link juice, 
+      // but 302/307 is better for analytics (forces hit to server).
+      // We use 307 Temporary Redirect to ensure analytics work.
+      return res.redirect(307, url.originalUrl);
     }
-    return res.status(404).json('No URL found');
+    
+    return res.status(404).send(`
+      <html>
+        <body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#030014;color:white;font-family:sans-serif;">
+          <div style="text-align:center;">
+            <h1 style="color:#a855f7;">404</h1>
+            <p>Link not found or expired.</p>
+          </div>
+        </body>
+      </html>
+    `);
   } catch (err) {
-    console.error(err);
+    console.error('Redirect Error:', err);
     res.status(500).json('Server Error');
   }
 });
 
+// Start Server (Only if not running as a module/serverless)
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server launched on port ${PORT}`);
   });
 }
 
