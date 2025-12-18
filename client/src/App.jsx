@@ -3,7 +3,6 @@ import axios from 'axios';
 import ShortenerForm from './components/ShortenerForm';
 import UrlResult from './components/UrlResult';
 import History from './components/History';
-
 import Footer from './components/Footer';
 
 function App() {
@@ -11,7 +10,6 @@ function App() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    // Generate/Get User ID
     let userId = localStorage.getItem('userId');
     if (!userId) {
       userId = crypto.randomUUID();
@@ -23,8 +21,6 @@ function App() {
   const fetchHistory = async () => {
     try {
       const userId = localStorage.getItem('userId');
-      // In production (Vercel), we use relative path to proxy correctly
-      // In dev, we use localhost:5000
       const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
       const res = await axios.get(`${apiUrl}/api/url/history`, {
         headers: { 'x-user-id': userId }
@@ -41,8 +37,7 @@ function App() {
   };
 
   const handleClearHistory = async () => {
-    if (!confirm('Are you sure you want to clear your history? This cannot be undone.')) return;
-
+    if (!confirm('Are you sure you want to clear your history?')) return;
     try {
       const userId = localStorage.getItem('userId');
       const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
@@ -52,28 +47,39 @@ function App() {
       setHistory([]);
     } catch (err) {
       console.error('Failed to clear history', err);
-      alert('Failed to clear history');
     }
   };
 
   return (
-    <div className="container" style={{ minHeight: '100vh', paddingBottom: '0' }}>
-      <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
-        <div style={{ textAlign: 'center' }}>
+    <>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '3rem', paddingTop: '4rem' }}>
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <div style={{ 
+            position: 'absolute', 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)', 
+            width: '200px', 
+            height: '200px', 
+            background: 'radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)', 
+            filter: 'blur(40px)', 
+            zIndex: -1 
+          }}></div>
           <h1>LinkShrink</h1>
-          <p className="subtitle">Premium URL Shortener for modern needs.</p>
+          <p className="subtitle">Make your links infinite.</p>
         </div>
 
-        <div style={{ width: '100%' }}>
+        <div style={{ width: '100%', maxWidth: '600px' }}>
           <ShortenerForm onUrlShortened={handleUrlShortened} />
           <UrlResult result={currentResult} />
         </div>
 
-        <History history={history} onClearHistory={handleClearHistory} />
+        <div style={{ width: '100%', maxWidth: '600px' }}>
+          <History history={history} onClearHistory={handleClearHistory} />
+        </div>
       </div>
-
       <Footer />
-    </div>
+    </>
   );
 }
 

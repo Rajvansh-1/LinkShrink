@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { FaLink, FaMagic } from 'react-icons/fa';
+import { FaLink, FaMagic, FaArrowRight } from 'react-icons/fa';
 
 const ShortenerForm = ({ onUrlShortened }) => {
   const [longUrl, setLongUrl] = useState('');
@@ -15,10 +15,9 @@ const ShortenerForm = ({ onUrlShortened }) => {
     setError('');
 
     try {
-      // In production (Vercel), we use relative path to proxy correctly
-      // In dev, we use localhost:5000
       const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
       const userId = localStorage.getItem('userId');
+      constQN
       const res = await axios.post(`${apiUrl}/api/url/shorten`, { longUrl }, {
         headers: { 'x-user-id': userId }
       });
@@ -26,49 +25,51 @@ const ShortenerForm = ({ onUrlShortened }) => {
       setLongUrl('');
     } catch (err) {
       console.error(err);
-      let errorMessage = 'Failed to shorten URL. Please try again.';
-
-      if (err.response) {
-        if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
-          if (err.response.data?.details) {
-            errorMessage += `: ${err.response.data.details}`;
-          }
-        } else if (err.response.data?.error) {
-          errorMessage = err.response.data.error;
-        } else {
-          // Fallback for unknown object structure
-          errorMessage = JSON.stringify(err.response.data);
-        }
-      }
-
-      setError(errorMessage);
+      setError('Failed to shorten. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="card">
-      <form onSubmit={handleSubmit} className="input-group">
-        <div style={{ position: 'relative', flex: 1 }}>
-          <FaLink style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+    <div className="card" style={{ zIndex: 10 }}>
+      <form onSubmit={handleSubmit}>
+        <div className="input-wrapper">
+          <div style={{ padding: '0 1rem', display: 'flex', alignItems: 'center' }}>
+            <FaLink style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }} />
+          </div>
           <input
             type="url"
-            placeholder="Paste your long URL here..."
+            placeholder="Paste your long link here to shrink it..."
             value={longUrl}
             onChange={(e) => setLongUrl(e.target.value)}
-            style={{ paddingLeft: '3rem' }}
             required
+            autoFocus
           />
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? (
+              <span className="loader"></span>
+            ) : (
+              <>Shorten <FaArrowRight /></>
+            )}
+          </button>
         </div>
-        <button type="submit" disabled={loading}>
-          {loading ? 'Shortening...' : <><FaMagic /> Shorten</>}
-        </button>
       </form>
-      {error && <p style={{ color: '#ef4444', marginTop: '1rem', textAlign: 'center' }}>{error}</p>}
+      {error && (
+        <div style={{ 
+          marginTop: '1rem', 
+          color: '#ef4444', 
+          background: 'rgba(239, 68, 68, 0.1)', 
+          padding: '0.75rem', 
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          fontSize: '0.9rem'
+        }}>
+          ⚠️ {error}
+        </div>
+      )}
     </div>
   );
 };
