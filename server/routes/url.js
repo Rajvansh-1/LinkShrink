@@ -22,11 +22,7 @@ router.post('/shorten', async (req, res) => {
 
   // 3. Determine Base URL
   // Use env var (Production) OR construct from request (Dev/Preview)
-  const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-
-  if (!validUrl.isUri(baseUrl)) {
-    return res.status(500).json({ message: 'Server Configuration Error: Invalid Base URL' });
-  }
+  const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
   // 4. Generate Unique Code
   // Using 6 characters for a better collision resistance while remaining short
@@ -63,12 +59,11 @@ router.get('/history', async (req, res) => {
     const userId = req.headers['x-user-id'];
     const urls = await db.getAllUrls(userId);
     
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
     const formattedUrls = urls.map(url => ({
       ...url,
-      shortUrl: `${cleanBaseUrl}/${url.urlCode}`
+      shortUrl: `${baseUrl}/${url.urlCode}`
     }));
 
     res.json(formattedUrls);
